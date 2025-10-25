@@ -11,6 +11,21 @@ interface GameTickResult {
   incidentsMissedThisTick: number;
 }
 
+function cloneStaffMember(staff: StaffMember): StaffMember {
+  return {
+    ...staff,
+    stats: { ...staff.stats },
+  };
+}
+
+function cloneGate(gate: Gate): Gate {
+  return {
+    ...gate,
+    queue: gate.queue.map(guest => ({ ...guest })),
+    assignedStaff: gate.assignedStaff.map(cloneStaffMember),
+  };
+}
+
 function createGuest(): Guest {
   return {
     id: `guest-${Date.now()}-${Math.random()}`,
@@ -28,7 +43,7 @@ export function runGameTick(
   totalGuests: number,
   currentReputation: number
 ): GameTickResult {
-  let newGates = JSON.parse(JSON.stringify(currentGates)) as Gate[];
+  const newGates = currentGates.map(cloneGate);
   let newReputation = currentReputation;
   const logs: { message: string, severity: LogSeverity }[] = [];
   let guestsProcessedThisTick = 0;
@@ -115,10 +130,10 @@ export function runGameTick(
   // 3. Process Gates
   newGates.forEach(gate => {
     if (gate.isOpen && gate.queue.length > 0) {
-      const staff = gate.assignedStaff[0]; // Simple logic for now, uses first staff member
+      const staff = gate.assignedStaff.length > 0 ? gate.assignedStaff[0] : undefined; // Simple logic for now, uses first staff member
       if (staff) {
         const guest = gate.queue[0];
-        
+
         // Processing logic based on staff observation
         const effectiveObservation = staff.stats.observation * (staff.currentFocus / 100);
         let detected = false;

@@ -2,6 +2,52 @@ import { StaffMember } from '../types';
 
 const CV_API_ENDPOINT = import.meta.env.VITE_CV_API_URL ?? '/api/generate-cv';
 
+interface CvApiResponse {
+  id?: string;
+  firstName: string;
+  lastName: string;
+  age: number;
+  gender: StaffMember['gender'];
+  physicalStrength: number;
+  communication: number;
+  observation: number;
+  reliability: number;
+  focusSustainability: number;
+  quitRisk: number;
+}
+
+function isCvApiResponse(value: unknown): value is CvApiResponse {
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
+
+  const data = value as Record<string, unknown>;
+
+  const stringFields: (keyof Pick<CvApiResponse, 'firstName' | 'lastName'>)[] = ['firstName', 'lastName'];
+  if (!stringFields.every(field => typeof data[field] === 'string')) {
+    return false;
+  }
+
+  if (typeof data.age !== 'number') {
+    return false;
+  }
+
+  if (data.gender !== 'Male' && data.gender !== 'Female' && data.gender !== 'Other') {
+    return false;
+  }
+
+  const numberFields: (keyof Pick<CvApiResponse, 'physicalStrength' | 'communication' | 'observation' | 'reliability' | 'focusSustainability' | 'quitRisk'>)[] = [
+    'physicalStrength',
+    'communication',
+    'observation',
+    'reliability',
+    'focusSustainability',
+    'quitRisk',
+  ];
+
+  return numberFields.every(field => typeof data[field] === 'number');
+}
+
 function getRandomInt(min: number, max: number) {
   min = Math.ceil(min);
   max = Math.floor(max);
@@ -90,7 +136,13 @@ async function requestGeneratedCv(): Promise<StaffMember | null> {
       throw new Error(`CV generation request failed with status ${response.status}`);
     }
 
-    const cvData = await response.json();
+    const parsedResponse = (await response.json()) as unknown;
+
+    if (!isCvApiResponse(parsedResponse)) {
+      throw new Error('CV generation response did not match the expected shape');
+    }
+
+    const cvData = parsedResponse;
 
     const stats = {
         physicalStrength: Math.max(1, Math.min(10, cvData.physicalStrength)),
