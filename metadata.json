@@ -1,0 +1,5 @@
+{
+  "name": "BigGameSecurity",
+  "description": "A 2D isometric stadium security management game where players act as the Security Director. The core gameplay focuses on strategic planning and hiring decisions, managing gate operations during a major sporting event to maintain operational efficiency and reputation.",
+  "requestFramePermissions": []
+}
