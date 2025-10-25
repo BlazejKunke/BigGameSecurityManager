@@ -51,44 +51,64 @@ export function runGameTick(
   }
 
   // 2. Guest Line Switching Logic
-    const movers: { guest: Guest; fromGateIndex: number; toGateIndex: number; guestIndex: number }[] = [];
+  const movers: { guest: Guest; fromGateIndex: number; toGateIndex: number; guestIndex: number }[] = [];
+  const openGateIndices = newGates
+    .map((gate, index) => (gate.isOpen ? index : -1))
+    .filter(index => index !== -1);
+  const anyGateOpen = openGateIndices.length > 0;
 
-    newGates.forEach((gate, gateIndex) => {
-        // Only check guests in longer queues or at closed gates for efficiency
-        if (gate.queue.length > 5 || !gate.isOpen) {
-            gate.queue.forEach((guest, guestIndex) => {
-                // Give each guest a chance to consider switching
-                if (Math.random() < 0.15) { // 15% chance
-                    const adjacentIndices = [gateIndex - 1, gateIndex + 1].filter(i => i >= 0 && i < newGates.length);
-                    let bestGateIndex = -1;
-                    // Current gate score: queue length + heavy penalty if closed
-                    let bestGateScore = gate.queue.length + (gate.isOpen ? 0 : 10); 
+  newGates.forEach((gate, gateIndex) => {
+    gate.queue.forEach((guest, guestIndex) => {
+      const isGateClosed = !gate.isOpen;
+      const queuePressure = Math.min(0.5, gate.queue.length / 30);
+      const closedFrustration = isGateClosed ? (anyGateOpen ? 0.6 : 0.25) : 0;
+      const willingness = 0.1 + queuePressure + closedFrustration;
 
-                    adjacentIndices.forEach(adjIndex => {
-                        const adjGate = newGates[adjIndex];
-                        const adjGateScore = adjGate.queue.length + (adjGate.isOpen ? 0 : 10);
-                        
-                        // Switch if the other gate is significantly better (threshold of 2 to prevent rapid back-and-forth)
-                        if (adjGateScore < bestGateScore - 2) { 
-                            bestGateScore = adjGateScore;
-                            bestGateIndex = adjIndex;
-                        }
-                    });
+      // Some guests are lazy – give them a chance to ignore moving even when it might be better.
+      if (Math.random() > Math.min(0.9, willingness)) {
+        return;
+      }
 
-                    if (bestGateIndex !== -1) {
-                        movers.push({ guest, fromGateIndex: gateIndex, toGateIndex: bestGateIndex, guestIndex });
-                    }
-                }
-            });
+      const currentScore = gate.queue.length + (gate.isOpen ? 0 : anyGateOpen ? 50 : 15);
+      let bestGateIndex = -1;
+      let bestGateScore = currentScore;
+
+      newGates.forEach((otherGate, otherIndex) => {
+        if (otherIndex === gateIndex) {
+          return;
         }
+
+        const distance = Math.abs(otherIndex - gateIndex);
+        const distancePenalty = distance * 1.5 + Math.max(0, distance - 2) * 1.5; // prefer nearby lines
+        const closurePenalty = otherGate.isOpen ? 0 : anyGateOpen ? 50 : 15;
+        const imperfectDecision = Math.random(); // they are not fully rational
+        const candidateScore =
+          otherGate.queue.length +
+          distancePenalty +
+          closurePenalty -
+          imperfectDecision;
+
+        // Only move if the alternative is meaningfully better than the current gate
+        if (candidateScore + 1 < bestGateScore) {
+          bestGateScore = candidateScore;
+          bestGateIndex = otherIndex;
+        }
+      });
+
+      if (bestGateIndex !== -1) {
+        movers.push({ guest, fromGateIndex: gateIndex, toGateIndex: bestGateIndex, guestIndex });
+      }
     });
-    
-    // Process movers, sorted descending by index to prevent splice issues
-    movers.sort((a, b) => b.guestIndex - a.guestIndex).forEach(move => {
-        const [movedGuest] = newGates[move.fromGateIndex].queue.splice(move.guestIndex, 1);
-        if (movedGuest) {
-            newGates[move.toGateIndex].queue.push(movedGuest);
-        }
+  });
+
+  // Process movers, sorted descending by guest index within each gate to avoid splice issues
+  movers
+    .sort((a, b) => (a.fromGateIndex === b.fromGateIndex ? b.guestIndex - a.guestIndex : b.fromGateIndex - a.fromGateIndex))
+    .forEach(move => {
+      const [movedGuest] = newGates[move.fromGateIndex].queue.splice(move.guestIndex, 1);
+      if (movedGuest) {
+        newGates[move.toGateIndex].queue.push(movedGuest);
+      }
     });
 
 
