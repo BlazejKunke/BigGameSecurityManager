@@ -1,42 +1,51 @@
 
 import React from 'react';
 import ProgressBar from './common/ProgressBar';
-import { ShieldCheckIcon, ClockIcon, FlagIcon } from './icons';
+import { UsersIcon, ClockIcon, FlagIcon, BanknotesIcon } from './icons';
 
 interface HudProps {
-  reputation: number;
+  totalQueueSize: number;
   gameTime: number; // in minutes
   eventPhase: string;
+  budget: number;
 }
 
-const Hud: React.FC<HudProps> = ({ reputation, gameTime, eventPhase }) => {
+const Hud: React.FC<HudProps> = ({ totalQueueSize, gameTime, eventPhase, budget }) => {
   const hours = Math.floor(gameTime / 60).toString().padStart(2, '0');
   const minutes = (gameTime % 60).toString().padStart(2, '0');
 
   return (
-    <div className="bg-gray-800 p-4 rounded-lg shadow-inner flex flex-col md:flex-row justify-between items-center gap-4">
-      <div className="flex items-center w-full md:w-1/3">
-        <ClockIcon className="w-8 h-8 mr-3 text-blue-300" />
+    <div className="bg-black p-4 border-2 border-green-500 grid grid-cols-2 md:grid-cols-4 gap-4 items-center">
+      <div className="flex items-center">
+        <BanknotesIcon className="w-8 h-8 mr-3 text-green-400 flex-shrink-0" />
         <div>
-          <div className="text-gray-400 text-sm">In-Game Time</div>
-          <div className="text-2xl font-bold font-mono">{hours}:{minutes}</div>
+          <div className="text-green-600 text-sm">Budget</div>
+          <div className="text-2xl font-bold font-mono text-glow">${budget}</div>
+        </div>
+      </div>
+      
+      <div className="flex items-center">
+        <ClockIcon className="w-8 h-8 mr-3 text-green-400 flex-shrink-0" />
+        <div>
+          <div className="text-green-600 text-sm">In-Game Time</div>
+          <div className="text-2xl font-bold font-mono text-glow">{hours}:{minutes}</div>
         </div>
       </div>
 
-      <div className="flex items-center w-full md:w-1/3">
-        <FlagIcon className="w-8 h-8 mr-3 text-blue-300" />
+      <div className="flex items-center">
+        <FlagIcon className="w-8 h-8 mr-3 text-green-400 flex-shrink-0" />
          <div>
-            <div className="text-gray-400 text-sm">Event Phase</div>
-            <div className="text-xl font-semibold">{eventPhase}</div>
+            <div className="text-green-600 text-sm">Event Phase</div>
+            <div className="text-xl font-semibold text-glow">{eventPhase}</div>
          </div>
       </div>
       
-      <div className="w-full md:w-1/3">
-        <div className="flex items-center mb-1">
-          <ShieldCheckIcon className="w-6 h-6 mr-2 text-green-400" />
-          <span className="font-semibold">Reputation</span>
+      <div className="flex items-center">
+        <UsersIcon className="w-8 h-8 mr-3 text-green-400 flex-shrink-0" />
+        <div>
+          <div className="text-green-600 text-sm">Total Queue</div>
+          <div className="text-2xl font-bold font-mono text-glow">{totalQueueSize}</div>
         </div>
-        <ProgressBar value={reputation} max={100} text={`${Math.round(reputation)}/100`} />
       </div>
 
     </div>

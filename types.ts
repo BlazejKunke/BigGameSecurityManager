@@ -5,6 +5,7 @@ export interface StaffMember {
   lastName: string;
   age: number;
   gender: 'Male' | 'Female' | 'Other';
+  salary: number;
   stats: {
     physicalStrength: number; // 1-10
     communication: number; // 1-10

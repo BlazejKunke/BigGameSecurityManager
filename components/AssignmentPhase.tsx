@@ -1,8 +1,7 @@
-
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { StaffMember, Gate } from '../types';
 import Button from './common/Button';
-import { ArrowRightIcon } from './icons';
+import { ArrowRightIcon, UserIcon, TrashIcon } from './icons';
 
 interface AssignmentPhaseProps {
   hiredStaff: StaffMember[];
@@ -11,106 +10,109 @@ interface AssignmentPhaseProps {
 }
 
 const AssignmentPhase: React.FC<AssignmentPhaseProps> = ({ hiredStaff, gates: initialGates, onAssignmentComplete }) => {
-  const [gates, setGates] = useState<Gate[]>(initialGates);
-  const [unassignedStaff, setUnassignedStaff] = useState<StaffMember[]>(
-    hiredStaff.filter(s => !initialGates.some(g => g.assignedStaff.some(gs => gs.id === s.id)))
+  const [gates, setGates] = useState<Gate[]>(() => 
+    initialGates.map(gate => ({
+        ...gate,
+        assignedStaff: gate.assignedStaff || []
+    }))
   );
+  const [selectedStaffId, setSelectedStaffId] = useState<string | null>(null);
 
-  const handleDragStart = (e: React.DragEvent<HTMLDivElement>, staff: StaffMember) => {
-    e.dataTransfer.setData("staffId", staff.id);
+  const unassignedStaff = useMemo(() => {
+    const assignedIds = new Set(gates.flatMap(g => g.assignedStaff.map(s => s.id)));
+    return hiredStaff.filter(s => !assignedIds.has(s.id));
+  }, [hiredStaff, gates]);
+
+  const handleSelectStaff = (staffId: string) => {
+    setSelectedStaffId(prevId => (prevId === staffId ? null : staffId));
   };
 
-  const handleDropOnGate = (e: React.DragEvent<HTMLDivElement>, gateId: number) => {
-    e.preventDefault();
-    const staffId = e.dataTransfer.getData("staffId");
-    const staffMember = unassignedStaff.find(s => s.id === staffId);
-    if (staffMember) {
-      setGates(prevGates => prevGates.map(gate => 
-        gate.id === gateId 
-          ? { ...gate, assignedStaff: [...gate.assignedStaff, staffMember] }
-          : gate
-      ));
-      setUnassignedStaff(prevStaff => prevStaff.filter(s => s.id !== staffId));
-    }
-  };
-  
-  const handleDropOnRoster = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    const staffId = e.dataTransfer.getData("staffId");
-    
-    let staffMember: StaffMember | undefined;
-    let fromGateId: number | null = null;
+  const handleAssignToGate = (gateId: number) => {
+    if (!selectedStaffId) return;
 
-    for (const gate of gates) {
-        const foundStaff = gate.assignedStaff.find(s => s.id === staffId);
-        if (foundStaff) {
-            staffMember = foundStaff;
-            fromGateId = gate.id;
-            break;
+    const staffToAssign = hiredStaff.find(s => s.id === selectedStaffId);
+    if (!staffToAssign) return;
+
+    setGates(prevGates => {
+      return prevGates.map(gate => {
+        if (gate.id === gateId && gate.assignedStaff.length === 0) {
+          return { ...gate, assignedStaff: [staffToAssign] };
         }
-    }
-
-    if (staffMember && fromGateId !== null) {
-      setGates(prevGates => prevGates.map(gate => 
-        gate.id === fromGateId
-          ? { ...gate, assignedStaff: gate.assignedStaff.filter(s => s.id !== staffId) }
-          : gate
-      ));
-      setUnassignedStaff(prevStaff => [...prevStaff, staffMember!]);
-    }
+        return gate;
+      });
+    });
+    setSelectedStaffId(null);
   };
 
-  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
+  const handleUnassign = (staffId: string) => {
+    setGates(prevGates => {
+        return prevGates.map(gate => ({
+            ...gate,
+            assignedStaff: gate.assignedStaff.filter(s => s.id !== staffId)
+        }));
+    });
   };
 
-  const StaffPill: React.FC<{ staff: StaffMember }> = ({ staff }) => (
-    <div
-      draggable
-      onDragStart={(e) => handleDragStart(e, staff)}
-      className="bg-blue-500 text-white p-2 rounded-md shadow-sm cursor-grab active:cursor-grabbing text-sm"
-    >
-      {staff.firstName} {staff.lastName}
-    </div>
-  );
-  
+  const isAssignmentComplete = useMemo(() => gates.every(g => g.assignedStaff.length > 0), [gates]);
+
   return (
-    <div className="max-w-7xl mx-auto">
-       <div className="text-center mb-6">
-          <h2 className="text-2xl font-bold text-blue-300">Staff Assignment</h2>
-          <p className="text-gray-400">Drag and drop staff to assign them to gates. Unassigned staff act as reserves.</p>
-       </div>
-      <div className="flex flex-col md:flex-row gap-6">
-        <div 
-            className="md:w-1/4 w-full bg-gray-800 p-4 rounded-lg shadow-lg"
-            onDrop={handleDropOnRoster}
-            onDragOver={handleDragOver}
-        >
-          <h3 className="text-lg font-semibold mb-4 border-b border-gray-700 pb-2">Unassigned Staff ({unassignedStaff.length})</h3>
-          <div className="space-y-2 h-96 overflow-y-auto pr-2">
-            {unassignedStaff.map(staff => <StaffPill key={staff.id} staff={staff} />)}
+    <div className="max-w-6xl mx-auto">
+      <div className="w-full bg-black p-6 border-2 border-green-500 mb-6 text-center">
+        <h2 className="text-2xl font-bold text-green-400 text-glow mb-2">Staff Assignment</h2>
+        <p className="text-green-600">Assign one staff member to each gate. Click a staff member, then click an empty gate.</p>
+      </div>
+
+      <div className="flex flex-col md:flex-row gap-8">
+        {/* Unassigned Staff List */}
+        <div className="md:w-1/3 border-2 border-green-500 p-4">
+          <h3 className="text-xl font-bold text-green-400 text-glow mb-4">Available Staff ({unassignedStaff.length})</h3>
+          <div className="space-y-2 max-h-96 overflow-y-auto">
+            {unassignedStaff.map(staff => (
+              <div
+                key={staff.id}
+                onClick={() => handleSelectStaff(staff.id)}
+                className={`p-3 border cursor-pointer transition-colors ${selectedStaffId === staff.id ? 'bg-green-500 text-black border-green-500' : 'border-green-700 hover:bg-green-900/50'}`}
+              >
+                <p className="font-bold">{staff.firstName} {staff.lastName}</p>
+                <p className="text-xs opacity-70">OBS: {staff.stats.observation} | STR: {staff.stats.physicalStrength} | COM: {staff.stats.communication}</p>
+              </div>
+            ))}
           </div>
         </div>
-        <div className="md:w-3/4 w-full grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+
+        {/* Gates Grid */}
+        <div className="md:w-2/3 grid grid-cols-2 lg:grid-cols-3 gap-4">
           {gates.map(gate => (
             <div
               key={gate.id}
-              onDrop={(e) => handleDropOnGate(e, gate.id)}
-              onDragOver={handleDragOver}
-              className="bg-gray-800 p-4 rounded-lg shadow-lg min-h-[120px] border-2 border-dashed border-gray-600 hover:border-blue-400 transition-colors"
+              onClick={() => handleAssignToGate(gate.id)}
+              className={`border-2 h-32 p-3 flex flex-col justify-between transition-colors ${gate.assignedStaff.length === 0 && selectedStaffId ? 'cursor-pointer hover:bg-green-900/50 border-dashed border-green-400' : 'border-green-700'}`}
             >
-              <h4 className="font-bold text-lg text-center mb-2">Gate {gate.id}</h4>
-              <div className="space-y-2">
-                {gate.assignedStaff.map(staff => <StaffPill key={staff.id} staff={staff} />)}
-              </div>
+              <h4 className="font-bold text-lg text-green-400 text-glow">Gate {gate.id}</h4>
+              {gate.assignedStaff.length > 0 ? (
+                gate.assignedStaff.map(staff => (
+                  <div key={staff.id} className="bg-green-900/50 p-2 text-sm flex justify-between items-center">
+                    <div className="flex items-center">
+                        <UserIcon className="w-4 h-4 mr-2" />
+                        <span>{staff.firstName} {staff.lastName.charAt(0)}.</span>
+                    </div>
+                    <button onClick={() => handleUnassign(staff.id)} className="text-red-500 hover:text-red-400">
+                        <TrashIcon className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center text-green-700">-- UNASSIGNED --</div>
+              )}
             </div>
           ))}
         </div>
       </div>
+      
       <div className="mt-8 text-center">
-        <Button onClick={() => onAssignmentComplete(gates)} variant="success">
-          Confirm Assignments & Proceed
-          <ArrowRightIcon className="w-5 h-5 ml-2" />
+        <Button onClick={() => onAssignmentComplete(gates)} disabled={!isAssignmentComplete} size="lg">
+            Proceed to Event Briefing
+            <ArrowRightIcon className="w-5 h-5 ml-2" />
         </Button>
       </div>
     </div>

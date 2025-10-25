@@ -1,4 +1,3 @@
-
 import React from 'react';
 
 interface ProgressBarProps {
@@ -12,13 +11,13 @@ const ProgressBar: React.FC<ProgressBarProps> = ({ value, max, text, small = fal
   const percentage = (value / max) * 100;
 
   let colorClass = 'bg-green-500';
-  if (percentage < 70) colorClass = 'bg-yellow-500';
+  if (percentage < 70) colorClass = 'bg-yellow-400';
   if (percentage < 40) colorClass = 'bg-red-500';
 
   return (
-    <div className={`w-full bg-gray-700 rounded-full ${small ? 'h-2.5' : 'h-4'} relative overflow-hidden`}>
+    <div className={`w-full bg-green-900/50 ${small ? 'h-2.5' : 'h-4'} relative overflow-hidden`}>
       <div
-        className={`h-full rounded-full ${colorClass} transition-all duration-300`}
+        className={`h-full ${colorClass} transition-all duration-300`}
         style={{ width: `${percentage}%` }}
       ></div>
       {text && (

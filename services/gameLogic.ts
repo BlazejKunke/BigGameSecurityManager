@@ -37,9 +37,10 @@ export function runGameTick(
 
   // 1. Guest Arrival
   if (gameTime > EVENT_TIMELINE.externalGatesOpen && gameTime < EVENT_TIMELINE.gameEnd) {
-    const arrivalRate = Math.sin((gameTime - EVENT_TIMELINE.externalGatesOpen) / (EVENT_TIMELINE.gameEnd - EVENT_TIMELINE.externalGatesOpen) * Math.PI) * 0.2;
+    // Increased arrival rate and guest count
+    const arrivalRate = Math.sin((gameTime - EVENT_TIMELINE.externalGatesOpen) / (EVENT_TIMELINE.gameEnd - EVENT_TIMELINE.externalGatesOpen) * Math.PI) * 0.8;
     if (Math.random() < arrivalRate) {
-        const guestCount = Math.floor(Math.random() * 5) + 1;
+        const guestCount = Math.floor(Math.random() * 20) + 6; // 6-25 guests
         for (let i = 0; i < guestCount; i++) {
             const guest = createGuest();
             // Distribute guests randomly among gates
@@ -49,7 +50,49 @@ export function runGameTick(
     }
   }
 
-  // 2. Process Gates
+  // 2. Guest Line Switching Logic
+    const movers: { guest: Guest; fromGateIndex: number; toGateIndex: number; guestIndex: number }[] = [];
+
+    newGates.forEach((gate, gateIndex) => {
+        // Only check guests in longer queues or at closed gates for efficiency
+        if (gate.queue.length > 5 || !gate.isOpen) {
+            gate.queue.forEach((guest, guestIndex) => {
+                // Give each guest a chance to consider switching
+                if (Math.random() < 0.15) { // 15% chance
+                    const adjacentIndices = [gateIndex - 1, gateIndex + 1].filter(i => i >= 0 && i < newGates.length);
+                    let bestGateIndex = -1;
+                    // Current gate score: queue length + heavy penalty if closed
+                    let bestGateScore = gate.queue.length + (gate.isOpen ? 0 : 10); 
+
+                    adjacentIndices.forEach(adjIndex => {
+                        const adjGate = newGates[adjIndex];
+                        const adjGateScore = adjGate.queue.length + (adjGate.isOpen ? 0 : 10);
+                        
+                        // Switch if the other gate is significantly better (threshold of 2 to prevent rapid back-and-forth)
+                        if (adjGateScore < bestGateScore - 2) { 
+                            bestGateScore = adjGateScore;
+                            bestGateIndex = adjIndex;
+                        }
+                    });
+
+                    if (bestGateIndex !== -1) {
+                        movers.push({ guest, fromGateIndex: gateIndex, toGateIndex: bestGateIndex, guestIndex });
+                    }
+                }
+            });
+        }
+    });
+    
+    // Process movers, sorted descending by index to prevent splice issues
+    movers.sort((a, b) => b.guestIndex - a.guestIndex).forEach(move => {
+        const [movedGuest] = newGates[move.fromGateIndex].queue.splice(move.guestIndex, 1);
+        if (movedGuest) {
+            newGates[move.toGateIndex].queue.push(movedGuest);
+        }
+    });
+
+
+  // 3. Process Gates
   newGates.forEach(gate => {
     if (gate.isOpen && gate.queue.length > 0) {
       const staff = gate.assignedStaff[0]; // Simple logic for now, uses first staff member
@@ -105,8 +148,8 @@ export function runGameTick(
     }
 
     // Reputation loss for long queues
-    if (gate.queue.length > 10) {
-        newReputation -= 0.05;
+    if (gate.queue.length > 15) { // Increased threshold due to higher traffic
+        newReputation -= 0.1;
     }
     
     // Staff focus degradation

@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Gate, EventLogMessage, EventReport, LogSeverity } from '../types';
 import { GAME_MINUTES_PER_REAL_SECOND, GAME_HOUR_START, EVENT_TIMELINE, EVENT_PHASE_DESCRIPTIONS, GUEST_COUNT } from '../constants';
 import { runGameTick } from '../services/gameLogic';
@@ -11,12 +12,13 @@ import { LockClosedIcon, LockOpenIcon } from './icons';
 interface EventPhaseProps {
   initialGates: Gate[];
   initialReputation: number;
+  budget: number;
   onEventComplete: (finalReputation: number, report: EventReport) => void;
   eventLog: EventLogMessage[];
   setEventLog: React.Dispatch<React.SetStateAction<EventLogMessage[]>>;
 }
 
-const EventPhase: React.FC<EventPhaseProps> = ({ initialGates, initialReputation, onEventComplete, eventLog, setEventLog }) => {
+const EventPhase: React.FC<EventPhaseProps> = ({ initialGates, initialReputation, budget, onEventComplete, eventLog, setEventLog }) => {
   const [gates, setGates] = useState<Gate[]>(initialGates);
   const [reputation, setReputation] = useState<number>(initialReputation);
   const [gameTime, setGameTime] = useState<number>(GAME_HOUR_START * 60); // in minutes
@@ -30,6 +32,8 @@ const EventPhase: React.FC<EventPhaseProps> = ({ initialGates, initialReputation
       incidentsPrevented: 0,
       incidentsMissed: 0,
   });
+
+  const totalQueueSize = useMemo(() => gates.reduce((sum, gate) => sum + gate.queue.length, 0), [gates]);
 
   const addLog = useCallback((message: string, severity: LogSeverity) => {
     const hours = Math.floor(gameTime / 60).toString().padStart(2, '0');
@@ -127,13 +131,13 @@ const EventPhase: React.FC<EventPhaseProps> = ({ initialGates, initialReputation
   return (
     <div className="flex flex-col lg:flex-row gap-4 h-[calc(100vh-150px)]">
       <div className="lg:w-3/4 flex flex-col gap-4">
-        <Hud reputation={reputation} gameTime={gameTime} eventPhase={eventPhase} />
+        <Hud totalQueueSize={totalQueueSize} gameTime={gameTime} eventPhase={eventPhase} budget={budget} />
         <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 flex-grow overflow-y-auto p-1">
           {gates.map(gate => (
             <GateDisplay key={gate.id} gate={gate} onToggle={() => toggleGate(gate.id)} />
           ))}
         </div>
-        <div className="bg-gray-800 p-2 rounded-lg shadow-inner flex justify-center gap-4">
+        <div className="bg-black p-2 border-t-2 border-green-500 flex justify-center gap-4">
             <Button onClick={() => toggleAllGates(true)} variant='success'>
                 <LockOpenIcon className="w-5 h-5 mr-2" /> Open All Gates
             </Button>

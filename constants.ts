@@ -2,6 +2,8 @@ import { Gate } from './types';
 
 export const NUM_GATES = 12;
 export const INITIAL_REPUTATION = 100;
+export const INITIAL_BUDGET = 6000;
+export const POST_EVENT_INCOME = 1500;
 export const GAME_HOUR_START = 18;
 export const GAME_HOUR_END = 24;
 export const GAME_MINUTES_PER_REAL_SECOND = 0.2; // 1 real minute = 12 game minutes
@@ -34,4 +36,4 @@ export const EVENT_PHASE_DESCRIPTIONS: { [key: number]: string } = {
   [EVENT_TIMELINE.finalSweepEnd]: "Final Sweep",
 };
 
-export const GUEST_COUNT = 300;
+export const GUEST_COUNT = 1500;

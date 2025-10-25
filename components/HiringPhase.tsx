@@ -5,15 +5,16 @@ import { generateCv } from '../services/cvGenerator';
 import { NUM_GATES } from '../constants';
 import Button from './common/Button';
 import CVCard from './CVCard';
-import { UserPlusIcon, ArrowRightIcon, UsersIcon } from './icons';
+import { UserPlusIcon, ArrowRightIcon, UsersIcon, BanknotesIcon } from './icons';
 
 interface HiringPhaseProps {
   onHiringComplete: (staff: StaffMember[]) => void;
   hiredStaff: StaffMember[];
+  budget: number;
+  onHireStaff: (staff: StaffMember) => void;
 }
 
-const HiringPhase: React.FC<HiringPhaseProps> = ({ onHiringComplete, hiredStaff: initialHiredStaff }) => {
-  const [hiredStaff, setHiredStaff] = useState<StaffMember[]>(initialHiredStaff);
+const HiringPhase: React.FC<HiringPhaseProps> = ({ onHiringComplete, hiredStaff, budget, onHireStaff }) => {
   const [currentCv, setCurrentCv] = useState<StaffMember | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
@@ -30,7 +31,7 @@ const HiringPhase: React.FC<HiringPhaseProps> = ({ onHiringComplete, hiredStaff:
 
   const handleAccept = () => {
     if (currentCv) {
-      setHiredStaff([...hiredStaff, currentCv]);
+      onHireStaff(currentCv);
       fetchNewCv();
     }
   };
@@ -39,29 +40,35 @@ const HiringPhase: React.FC<HiringPhaseProps> = ({ onHiringComplete, hiredStaff:
     fetchNewCv();
   };
 
+  const canAfford = currentCv ? budget >= currentCv.salary : false;
+
   return (
     <div className="flex flex-col items-center max-w-4xl mx-auto">
-      <div className="w-full bg-gray-800 p-6 rounded-lg shadow-2xl mb-6">
-        <h2 className="text-2xl font-bold text-center text-blue-300 mb-2">Hiring Phase</h2>
-        <p className="text-center text-gray-400 mb-4">
+      <div className="w-full bg-black p-6 border-2 border-green-500 mb-6">
+        <h2 className="text-2xl font-bold text-center text-green-400 text-glow mb-2">Hiring Phase</h2>
+        <p className="text-center text-green-600 mb-4">
           Your success depends on your team. Hire at least {NUM_GATES} staff members to cover all gates.
         </p>
-        <div className="flex justify-center items-center space-x-4 bg-gray-900 p-3 rounded-md">
-           <UsersIcon className="w-6 h-6 text-green-400" />
-          <span className="text-lg font-semibold">Hired Staff: {hiredStaff.length} / {NUM_GATES} (min)</span>
+        <div className="flex justify-center items-center flex-wrap gap-x-4 gap-y-2 bg-black p-3 border border-green-700">
+           <div className="flex items-center"><UsersIcon className="w-6 h-6 text-green-400 mr-2" /><span className="text-lg font-semibold">Hired: {hiredStaff.length} / {NUM_GATES} (min)</span></div>
+           <div className="w-px h-6 bg-green-700 hidden md:block"></div>
+           <div className="flex items-center"><BanknotesIcon className="w-6 h-6 text-green-400 mr-2" /><span className="text-lg font-semibold">Budget: ${budget}</span></div>
         </div>
       </div>
 
       <div className="w-full flex flex-col md:flex-row gap-6">
         <div className="md:w-2/3 w-full">
-            {isLoading && <div className="flex justify-center items-center h-96 bg-gray-800 rounded-lg shadow-inner"><div className="text-xl">Generating Applicant CV...</div></div>}
+            {isLoading && <div className="flex justify-center items-center h-96 bg-black border border-green-700"><div className="text-xl">Generating Applicant CV...</div></div>}
             {!isLoading && currentCv && <CVCard staffMember={currentCv} />}
         </div>
         <div className="md:w-1/3 w-full flex flex-col space-y-4">
-            <Button onClick={handleAccept} disabled={isLoading} className="w-full">
+            <Button onClick={handleAccept} disabled={isLoading || !canAfford} className="w-full">
                 <UserPlusIcon className="w-5 h-5 mr-2" />
                 Accept
             </Button>
+            {!isLoading && !canAfford && (
+                <p className="text-red-400 text-xs text-center -mt-2">Insufficient budget to hire.</p>
+            )}
             <Button onClick={handleReject} disabled={isLoading} variant="danger" className="w-full">
                 Reject
             </Button>
