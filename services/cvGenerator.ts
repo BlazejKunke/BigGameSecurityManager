@@ -1,13 +1,6 @@
-import { GoogleGenAI, Type } from "@google/genai";
 import { StaffMember } from '../types';
 
-let ai: GoogleGenAI;
-
-if (process.env.API_KEY) {
-    ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-} else {
-    console.warn("API_KEY environment variable not found. Using mock data.");
-}
+const CV_API_ENDPOINT = import.meta.env.VITE_CV_API_URL ?? '/api/generate-cv';
 
 function getRandomInt(min: number, max: number) {
   min = Math.ceil(min);
@@ -59,7 +52,7 @@ function generateMockCv(): StaffMember {
     const firstNames = ["John", "Jane", "Alex", "Emily", "Chris", "Michael", "Sarah", "David", "Laura"];
     const lastNames = ["Smith", "Doe", "Johnson", "Williams", "Brown", "Jones", "Garcia", "Miller"];
     const gender = Math.random() > 0.5 ? 'Male' : 'Female';
-    
+
     const stats = {
         physicalStrength: getRandomInt(2, 8),
         communication: getRandomInt(2, 8),
@@ -83,37 +76,21 @@ function generateMockCv(): StaffMember {
     };
 }
 
-
-export async function generateCv(): Promise<StaffMember> {
-  if (!ai) {
-      return generateMockCv();
-  }
-  
+async function requestGeneratedCv(): Promise<StaffMember | null> {
   try {
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: "Generate a single CV for a stadium security guard applicant. Provide realistic and varied stats. Gender can be Male, Female, or Other.",
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            firstName: { type: Type.STRING },
-            lastName: { type: Type.STRING },
-            age: { type: Type.INTEGER },
-            gender: { type: Type.STRING, enum: ['Male', 'Female', 'Other'] },
-            physicalStrength: { type: Type.INTEGER, description: "A value between 1 and 10" },
-            communication: { type: Type.INTEGER, description: "A value between 1 and 10" },
-            observation: { type: Type.INTEGER, description: "A value between 1 and 10" },
-            reliability: { type: Type.INTEGER, description: "A percentage between 50 and 100" },
-            focusSustainability: { type: Type.INTEGER, description: "A percentage between 40 and 100" },
-            quitRisk: { type: Type.INTEGER, description: "A percentage between 1 and 25" },
-          },
-        },
+    const response = await fetch(CV_API_ENDPOINT, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
       },
+      body: JSON.stringify({}),
     });
 
-    const cvData = JSON.parse(response.text);
+    if (!response.ok) {
+      throw new Error(`CV generation request failed with status ${response.status}`);
+    }
+
+    const cvData = await response.json();
 
     const stats = {
         physicalStrength: Math.max(1, Math.min(10, cvData.physicalStrength)),
@@ -127,7 +104,7 @@ export async function generateCv(): Promise<StaffMember> {
     const salary = calculateSalary(stats);
 
     const validatedData: StaffMember = {
-        id: `gen-${Date.now()}-${Math.random()}`,
+        id: cvData.id ?? `gen-${Date.now()}-${Math.random()}`,
         firstName: cvData.firstName,
         lastName: cvData.lastName,
         age: Math.max(18, Math.min(65, cvData.age)),
@@ -138,9 +115,17 @@ export async function generateCv(): Promise<StaffMember> {
     };
 
     return validatedData;
-
   } catch (error) {
-    console.error("Error generating CV with Gemini API, falling back to mock data:", error);
-    return generateMockCv();
+    console.error("Error requesting CV from backend, falling back to mock data:", error);
+    return null;
   }
+}
+
+export async function generateCv(): Promise<StaffMember> {
+  const generatedCv = await requestGeneratedCv();
+  if (generatedCv) {
+    return generatedCv;
+  }
+
+  return generateMockCv();
 }
