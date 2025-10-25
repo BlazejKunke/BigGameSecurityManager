@@ -1,5 +1,5 @@
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { GamePhase, StaffMember, Gate, EventLogMessage, EventReport } from './types';
 import { INITIAL_GATES, INITIAL_REPUTATION, NUM_GATES, INITIAL_BUDGET, POST_EVENT_INCOME } from './constants';
 import HiringPhase from './components/HiringPhase';
@@ -69,12 +69,25 @@ const App: React.FC = () => {
     setGamePhase(GamePhase.Hiring);
   }, []);
 
-  const renderPhase = () => {
+  const phaseContent = useMemo(() => {
     switch (gamePhase) {
       case GamePhase.Hiring:
-        return <HiringPhase onHiringComplete={handleHiringComplete} hiredStaff={hiredStaff} budget={budget} onHireStaff={handleHireStaff} />;
+        return (
+          <HiringPhase
+            onHiringComplete={handleHiringComplete}
+            hiredStaff={hiredStaff}
+            budget={budget}
+            onHireStaff={handleHireStaff}
+          />
+        );
       case GamePhase.Assignment:
-        return <AssignmentPhase hiredStaff={hiredStaff} gates={gates} onAssignmentComplete={handleAssignmentComplete} />;
+        return (
+          <AssignmentPhase
+            hiredStaff={hiredStaff}
+            gates={gates}
+            onAssignmentComplete={handleAssignmentComplete}
+          />
+        );
       case GamePhase.EventBriefing:
         return <EventBriefing onStartEvent={handleStartEvent} day={day} />;
       case GamePhase.Event:
@@ -89,13 +102,38 @@ const App: React.FC = () => {
           />
         );
       case GamePhase.PostEvent:
-        return eventReport && <PostEventPhase report={eventReport} onNextEvent={handleNextEvent} currentBudget={budget} eventIncome={POST_EVENT_INCOME} />;
+        return (
+          eventReport && (
+            <PostEventPhase
+              report={eventReport}
+              onNextEvent={handleNextEvent}
+              currentBudget={budget}
+              eventIncome={POST_EVENT_INCOME}
+            />
+          )
+        );
       case GamePhase.GameOver:
         return eventReport && <GameOver report={eventReport} onRestart={restartGame} />;
       default:
         return <div>Loading...</div>;
     }
-  };
+  }, [
+    budget,
+    day,
+    eventLog,
+    eventReport,
+    gamePhase,
+    gates,
+    handleAssignmentComplete,
+    handleEventComplete,
+    handleHireStaff,
+    handleHiringComplete,
+    handleNextEvent,
+    handleStartEvent,
+    hiredStaff,
+    reputation,
+    restartGame,
+  ]);
 
   return (
     <div className="min-h-screen">
@@ -104,7 +142,7 @@ const App: React.FC = () => {
         <p className="text-sm text-green-600">Security Director Management Simulation</p>
       </header>
       <main className="p-4 md:p-8">
-        {renderPhase()}
+        {phaseContent}
       </main>
     </div>
   );
