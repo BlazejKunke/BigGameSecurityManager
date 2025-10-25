@@ -18,21 +18,37 @@ function getRandomInt(min: number, max: number) {
 function calculateSalary(stats: StaffMember['stats']): number {
     const skillSum = stats.physicalStrength + stats.communication + stats.observation + (stats.reliability / 10) + (stats.focusSustainability / 10);
 
-    // Drastically reduce base salary and skill multiplier to cut average salary.
-    const skillBasedSalary = 150 + skillSum * 6;
+    // Map the total skill score to a base salary range where low skill sets start near
+    // the minimum salary and exceptionally skilled applicants approach the top end.
+    const MIN_SKILL_SUM = 17;
+    const MAX_SKILL_SUM = 43;
+    const MIN_BASE_SALARY = 140;
+    const MAX_BASE_SALARY = 600;
 
-    // Use a triangular distribution for the personality factor to make extreme
-    // arrogance or humility less common than a more "normal" negotiation style.
-    // This creates a bell-curve-like effect for salaries.
-    const triangularRandom = (Math.random() + Math.random()) / 2; // Peak at 0.5
-    
-    // This factor will now range from 0.7 to 1.5, with the most common value being 1.1.
-    const personalityFactor = 0.7 + triangularRandom * 0.8;
+    const normalizedSkill = Math.min(1, Math.max(0, (skillSum - MIN_SKILL_SUM) / (MAX_SKILL_SUM - MIN_SKILL_SUM)));
+    const skillBasedSalary = MIN_BASE_SALARY + normalizedSkill * (MAX_BASE_SALARY - MIN_BASE_SALARY);
+
+    // Introduce personality-driven negotiation styles. Most candidates negotiate near
+    // their skill-based value, while a minority are noticeably humble or aggressive.
+    const personalityRoll = Math.random();
+    let personalityFactor: number;
+
+    if (personalityRoll < 0.15) {
+        // Humbler applicants ask for a bit less than their skills might warrant.
+        personalityFactor = 0.7 + Math.random() * 0.15; // 0.70 - 0.85
+    } else if (personalityRoll < 0.85) {
+        // Typical applicants cluster around the skill-based expectation.
+        const bellCurve = (Math.random() + Math.random()) / 2; // Peak at 0.5
+        personalityFactor = 0.9 + bellCurve * 0.3; // ~0.9 - 1.2, centered near 1.05
+    } else {
+        // More aggressive negotiators push for noticeably higher salaries.
+        personalityFactor = 1.15 + Math.random() * 0.25; // 1.15 - 1.40
+    }
 
     let salary = skillBasedSalary * personalityFactor;
 
-    // Clamp the salary to the desired $300-$1000 range.
-    salary = Math.max(300, Math.min(1000, salary));
+    // Clamp the salary to the desired $100-$750 range.
+    salary = Math.max(100, Math.min(750, salary));
 
     // Round to the nearest $50 for cleaner numbers.
     return Math.round(salary / 50) * 50;
