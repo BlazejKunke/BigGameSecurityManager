@@ -158,6 +158,7 @@ export function runGameTick(
           gate.queue.shift();
           detected = true;
           incidentsPreventedThisTick++;
+          guestsProcessedThisTick++;
           newReputation = Math.min(100, newReputation + 0.5);
         } else if (guest.hasFakeTicket) {
           logs.push({ message: `Gate ${gate.id}: Fake ticket missed!`, severity: LogSeverity.Warning });
@@ -170,11 +171,12 @@ export function runGameTick(
           gate.queue.shift();
           detected = true;
           incidentsPreventedThisTick++;
+          guestsProcessedThisTick++;
           newReputation = Math.min(100, newReputation + 0.5);
-        } else if (guest.hasFakeId) {
-            logs.push({ message: `Gate ${gate.id}: Fake ID missed!`, severity: LogSeverity.Warning });
-            incidentsMissedThisTick++;
-            newReputation -= 2;
+        } else if (!detected && guest.hasFakeId) {
+          logs.push({ message: `Gate ${gate.id}: Fake ID missed!`, severity: LogSeverity.Warning });
+          incidentsMissedThisTick++;
+          newReputation -= 2;
         }
 
         if (!detected && guest.isMTE && Math.random() * 15 < effectiveObservation) {
@@ -182,13 +184,14 @@ export function runGameTick(
             gate.queue.shift();
             detected = true;
             incidentsPreventedThisTick++;
+            guestsProcessedThisTick++;
             newReputation = Math.min(100, newReputation + 5);
-        } else if (guest.isMTE) {
+        } else if (!detected && guest.isMTE) {
             logs.push({ message: `Gate ${gate.id}: MTE slipped through security!`, severity: LogSeverity.Critical });
             incidentsMissedThisTick++;
             newReputation -= 10;
         }
-        
+
         if(!detected) {
             gate.queue.shift();
             guestsProcessedThisTick++;
