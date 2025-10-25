@@ -21,7 +21,9 @@ function cloneStaffMember(staff: StaffMember): StaffMember {
 function cloneGate(gate: Gate): Gate {
   return {
     ...gate,
-    queue: gate.queue.map(guest => ({ ...guest })),
+    // Queue operations during a tick only re-order guests, so we can reuse guest references
+    queue: gate.queue.slice(),
+    // Staff focus is mutated each tick, so create defensive copies for assigned staff
     assignedStaff: gate.assignedStaff.map(cloneStaffMember),
   };
 }
@@ -117,14 +119,27 @@ export function runGameTick(
   });
 
   // Process movers, sorted descending by guest index within each gate to avoid splice issues
-  movers
-    .sort((a, b) => (a.fromGateIndex === b.fromGateIndex ? b.guestIndex - a.guestIndex : b.fromGateIndex - a.fromGateIndex))
-    .forEach(move => {
-      const [movedGuest] = newGates[move.fromGateIndex].queue.splice(move.guestIndex, 1);
-      if (movedGuest) {
-        newGates[move.toGateIndex].queue.push(movedGuest);
-      }
-    });
+  const movesByGate = new Map<number, typeof movers>();
+  movers.forEach(move => {
+    if (!movesByGate.has(move.fromGateIndex)) {
+      movesByGate.set(move.fromGateIndex, []);
+    }
+    movesByGate.get(move.fromGateIndex)!.push(move);
+  });
+
+  movesByGate.forEach((gateMoves, fromGateIndex) => {
+    const gate = newGates[fromGateIndex];
+    if (!gate) {
+      return;
+    }
+
+    const indicesToMove = new Set(gateMoves.map(move => move.guestIndex));
+    gate.queue = gate.queue.filter((_, index) => !indicesToMove.has(index));
+  });
+
+  movers.forEach(move => {
+    newGates[move.toGateIndex].queue.push(move.guest);
+  });
 
 
   // 3. Process Gates
