@@ -27,6 +27,9 @@ const EventPhase: React.FC<EventPhaseProps> = ({ initialGates, initialReputation
   // FIX: Changed type from NodeJS.Timeout to number for browser compatibility
   // and initialized with null to address both type and argument errors for useRef.
   const gameLoopRef = useRef<number | null>(null);
+  const gatesRef = useRef<Gate[]>(initialGates);
+  const reputationRef = useRef<number>(initialReputation);
+  const eventPhaseRef = useRef<string>("Pre-Event");
   const reportRef = useRef({
       guestsProcessed: 0,
       incidentsPrevented: 0,
@@ -46,6 +49,18 @@ const EventPhase: React.FC<EventPhaseProps> = ({ initialGates, initialReputation
     };
     setEventLog(prev => [newLog, ...prev.slice(0, 99)]);
   }, [gameTime, setEventLog]);
+
+  useEffect(() => {
+    gatesRef.current = gates;
+  }, [gates]);
+
+  useEffect(() => {
+    reputationRef.current = reputation;
+  }, [reputation]);
+
+  useEffect(() => {
+    eventPhaseRef.current = eventPhase;
+  }, [eventPhase]);
 
   useEffect(() => {
     const intervalMilliseconds = 1000 / GAME_MINUTES_PER_REAL_SECOND;
@@ -69,12 +84,13 @@ const EventPhase: React.FC<EventPhaseProps> = ({ initialGates, initialReputation
         window.clearInterval(gameLoopRef.current);
       }
       
+      const finalReputation = reputationRef.current;
       const finalReport: EventReport = {
           ...reportRef.current,
-          reputationChange: reputation - initialReputation,
-          finalReputation: reputation,
+          reputationChange: finalReputation - initialReputation,
+          finalReputation,
       };
-      onEventComplete(reputation, finalReport);
+      onEventComplete(finalReputation, finalReport);
       return;
     }
 
@@ -82,14 +98,14 @@ const EventPhase: React.FC<EventPhaseProps> = ({ initialGates, initialReputation
       .reverse()
       .find(([time]) => gameTime >= parseInt(time))?.[1];
 
-    if (currentPhaseDescription && currentPhaseDescription !== eventPhase) {
+    if (currentPhaseDescription && currentPhaseDescription !== eventPhaseRef.current) {
       setEventPhase(currentPhaseDescription);
       addLog(`Phase changed: ${currentPhaseDescription}`, LogSeverity.Info);
     }
     
     // Run game logic tick
-    const tickResult = runGameTick(gameTime, gates, GUEST_COUNT, reputation);
-    
+    const tickResult = runGameTick(gameTime, gatesRef.current, GUEST_COUNT, reputationRef.current);
+
     setGates(tickResult.newGates);
     setReputation(tickResult.newReputation);
     reportRef.current.guestsProcessed += tickResult.guestsProcessedThisTick;
@@ -110,17 +126,18 @@ const EventPhase: React.FC<EventPhaseProps> = ({ initialGates, initialReputation
         };
         onEventComplete(0, finalReport);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [gameTime]);
+  }, [gameTime, addLog]);
 
   const toggleGate = (gateId: number) => {
-    setGates(prevGates => prevGates.map(gate => 
-      gate.id === gateId ? { ...gate, isOpen: !gate.isOpen } : gate
-    ));
-    const targetGate = gates.find(g => g.id === gateId);
-    if(targetGate) {
+    setGates(prevGates => {
+      const targetGate = prevGates.find(g => g.id === gateId);
+      if (targetGate) {
         addLog(`Gate ${gateId} manually ${targetGate.isOpen ? 'closed' : 'opened'}.`, LogSeverity.Info);
-    }
+      }
+      return prevGates.map(gate =>
+        gate.id === gateId ? { ...gate, isOpen: !gate.isOpen } : gate
+      );
+    });
   };
 
   const toggleAllGates = (open: boolean) => {
