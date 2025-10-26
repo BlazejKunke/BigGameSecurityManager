@@ -8,6 +8,21 @@ interface ProgressBarProps {
 }
 
 const ProgressBar: React.FC<ProgressBarProps> = ({ value, max, text, small = false }) => {
+  React.useEffect(() => {
+    if (typeof document === 'undefined') return;
+
+    if (!document.getElementById('progress-bar-styles')) {
+      const style = document.createElement('style');
+      style.id = 'progress-bar-styles';
+      style.innerHTML = `
+        .text-shadow {
+          text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7);
+        }
+      `;
+      document.head.appendChild(style);
+    }
+  }, []);
+
   const percentage = (value / max) * 100;
 
   let colorClass = 'bg-green-500';
@@ -28,15 +43,5 @@ const ProgressBar: React.FC<ProgressBarProps> = ({ value, max, text, small = fal
     </div>
   );
 };
-
-// Add a simple text shadow utility to Tailwind via a style tag (as we can't edit tailwind.config.js)
-const style = document.createElement('style');
-style.innerHTML = `
-  .text-shadow {
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7);
-  }
-`;
-document.head.appendChild(style);
-
 
 export default ProgressBar;
