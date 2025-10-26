@@ -1,0 +1,224 @@
+================================================================================
+                    HOW TO RUN THE GAME ON YOUR COMPUTER
+                   JAK URUCHOMIĆ GRĘ NA SWOIM KOMPUTERZE
+================================================================================
+
+
+################################################################################
+#                            ENGLISH VERSION                                   #
+################################################################################
+
+WHAT YOU NEED:
+--------------
+1. Node.js (free program) - Download from: https://nodejs.org/
+2. Google Gemini API Key (free) - Get it from: https://aistudio.google.com/apikey
+
+
+STEP 1: INSTALL NODE.JS
+-----------------------
+Windows:
+- Go to https://nodejs.org/
+- Click "Download Node.js (LTS)"
+- Run the downloaded file and click "Next" until installed
+- Restart your computer
+
+Mac:
+- Go to https://nodejs.org/
+- Click "Download Node.js (LTS)"
+- Open the downloaded .pkg file and follow the steps
+- Restart your computer
+
+
+STEP 2: GET YOUR API KEY
+------------------------
+1. Visit: https://aistudio.google.com/apikey
+2. Sign in with your Google account
+3. Click "Create API Key"
+4. Copy the key (long string of letters and numbers)
+5. Keep it safe - you'll need it next!
+
+
+STEP 3: SET UP THE GAME
+-----------------------
+1. Find the game folder on your computer
+
+2. Create a new text file in the game folder
+   - Name it exactly: .env.local
+
+   Windows tip: In Notepad, when saving choose "All Files" as the file type
+   Mac tip: Use TextEdit in Plain Text mode (Format > Make Plain Text)
+
+3. Open .env.local and type this (replace with your actual key):
+
+   GEMINI_API_KEY=paste-your-key-here
+
+   Example: GEMINI_API_KEY=AIzaSyAbc123def456ghi789
+
+4. Save and close the file
+
+
+STEP 4: INSTALL THE GAME
+------------------------
+Windows:
+1. Press Windows Key + R
+2. Type: cmd
+3. Press Enter
+4. Type: cd
+5. Drag the game folder into the window
+6. Press Enter
+7. Type: npm install
+8. Press Enter and wait (text will scroll - this is normal!)
+
+Mac:
+1. Open Terminal (search for "Terminal" in Spotlight)
+2. Type: cd
+3. Drag the game folder into the Terminal window
+4. Press Enter
+5. Type: npm install
+6. Press Enter and wait (text will scroll - this is normal!)
+
+
+STEP 5: RUN THE GAME
+--------------------
+Windows:
+1. Open Command Prompt (Windows Key + R, type "cmd")
+2. Type: cd
+3. Drag the game folder into the window
+4. Press Enter
+5. Type: npm run dev
+6. Press Enter
+7. Open your browser and go to: http://localhost:5173
+
+Mac:
+1. Open Terminal
+2. Type: cd
+3. Drag the game folder into Terminal
+4. Press Enter
+5. Type: npm run dev
+6. Press Enter
+7. Open your browser and go to: http://localhost:5173
+
+
+TO STOP THE GAME:
+-----------------
+Go to the Command Prompt/Terminal window and press: Ctrl + C
+
+
+TROUBLESHOOTING:
+---------------
+- "npm not found" = Node.js not installed correctly, try reinstalling
+- "Invalid API key" = Check you copied the entire key correctly
+- Game won't load = Use Chrome, Firefox, Safari, or Edge browser
+
+
+################################################################################
+#                            WERSJA POLSKA                                     #
+################################################################################
+
+CZEGO POTRZEBUJESZ:
+-------------------
+1. Node.js (darmowy program) - Pobierz z: https://nodejs.org/
+2. Klucz API Google Gemini (darmowy) - Pobierz z: https://aistudio.google.com/apikey
+
+
+KROK 1: ZAINSTALUJ NODE.JS
+---------------------------
+Windows:
+- Wejdź na https://nodejs.org/
+- Kliknij "Download Node.js (LTS)"
+- Uruchom pobrany plik i klikaj "Dalej" aż do końca instalacji
+- Uruchom komputer ponownie
+
+Mac:
+- Wejdź na https://nodejs.org/
+- Kliknij "Download Node.js (LTS)"
+- Otwórz pobrany plik .pkg i postępuj zgodnie z instrukcjami
+- Uruchom komputer ponownie
+
+
+KROK 2: ZDOBĄDŹ KLUCZ API
+--------------------------
+1. Wejdź na: https://aistudio.google.com/apikey
+2. Zaloguj się swoim kontem Google
+3. Kliknij "Create API Key"
+4. Skopiuj klucz (długi ciąg liter i cyfr)
+5. Zachowaj go - będzie potrzebny!
+
+
+KROK 3: SKONFIGURUJ GRĘ
+------------------------
+1. Znajdź folder z grą na swoim komputerze
+
+2. Utwórz nowy plik tekstowy w folderze z grą
+   - Nazwij go dokładnie: .env.local
+
+   Wskazówka Windows: W Notatniku przy zapisywaniu wybierz "Wszystkie pliki"
+   Wskazówka Mac: Użyj TextEdit w trybie Zwykły tekst (Format > Zmień na zwykły tekst)
+
+3. Otwórz .env.local i wpisz (wstaw swój prawdziwy klucz):
+
+   GEMINI_API_KEY=wklej-tutaj-swoj-klucz
+
+   Przykład: GEMINI_API_KEY=AIzaSyAbc123def456ghi789
+
+4. Zapisz i zamknij plik
+
+
+KROK 4: ZAINSTALUJ GRĘ
+-----------------------
+Windows:
+1. Naciśnij Klawisz Windows + R
+2. Wpisz: cmd
+3. Naciśnij Enter
+4. Wpisz: cd
+5. Przeciągnij folder z grą do okna
+6. Naciśnij Enter
+7. Wpisz: npm install
+8. Naciśnij Enter i czekaj (tekst będzie się przewijał - to normalne!)
+
+Mac:
+1. Otwórz Terminal (wyszukaj "Terminal" w Spotlight)
+2. Wpisz: cd
+3. Przeciągnij folder z grą do okna Terminala
+4. Naciśnij Enter
+5. Wpisz: npm install
+6. Naciśnij Enter i czekaj (tekst będzie się przewijał - to normalne!)
+
+
+KROK 5: URUCHOM GRĘ
+--------------------
+Windows:
+1. Otwórz Wiersz polecenia (Klawisz Windows + R, wpisz "cmd")
+2. Wpisz: cd
+3. Przeciągnij folder z grą do okna
+4. Naciśnij Enter
+5. Wpisz: npm run dev
+6. Naciśnij Enter
+7. Otwórz przeglądarkę i wejdź na: http://localhost:5173
+
+Mac:
+1. Otwórz Terminal
+2. Wpisz: cd
+3. Przeciągnij folder z grą do Terminala
+4. Naciśnij Enter
+5. Wpisz: npm run dev
+6. Naciśnij Enter
+7. Otwórz przeglądarkę i wejdź na: http://localhost:5173
+
+
+ABY ZATRZYMAĆ GRĘ:
+------------------
+Przejdź do okna Wiersza polecenia/Terminala i naciśnij: Ctrl + C
+
+
+ROZWIĄZYWANIE PROBLEMÓW:
+------------------------
+- "npm nie znaleziono" = Node.js źle zainstalowany, zainstaluj ponownie
+- "Invalid API key" = Sprawdź czy skopiowałeś cały klucz poprawnie
+- Gra się nie ładuje = Użyj przeglądarki Chrome, Firefox, Safari lub Edge
+
+
+================================================================================
+                              ENJOY THE GAME!
+                              BAW SIĘ DOBRZE!
+================================================================================
